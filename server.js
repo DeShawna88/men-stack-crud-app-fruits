@@ -2,11 +2,14 @@ const dotenv = require("dotenv"); // require package
 dotenv.config(); // Loads the environment variables from .env file
 
 // Here is where we import modules
+//Basic structure of Express App along with app.listen at bottom
 // We begin by loading Express
 const express = require('express');
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'); //require mongoose package  
 
 const app = express();
+
+
 
 const methodOverride = require("method-override"); // new
 const morgan = require("morgan"); //new
@@ -21,14 +24,18 @@ mongoose.connection.on("connected", () => {
 // Import the Fruit model
 const Fruit = require("./models/fruit.js");
 
+// --------------- MIDDLEWARE ------------------
 // Mount it along with our other middleware, ABOVE the routes
 app.use(express.urlencoded({ extended: false }));
 app.use(methodOverride("_method")); // new
-app.use(morgan("dev")); //new
+// app.use(morgan("dev")); //new
+const path = require("path");
 
-  
+  // new code below this line
+ app.use(express.static(path.join(__dirname, "public")));
 
-// // GET /
+// --------------- ROUTES --------------------
+// GET /
 app.get("/", async (req, res) => {
     res.render("index.ejs");
   });
@@ -114,7 +121,20 @@ app.get("/fruits/:fruitId/edit", async (req, res) => {
   });
 });
 
+app.put("/fruits/:fruitId", async (req, res) => {
+  // Handle the 'isReadyToEat' checkbox data
+  if (req.body.isReadyToEat === "on") {
+    req.body.isReadyToEat = true;
+  } else {
+    req.body.isReadyToEat = false;
+  }
+  
+  // Update the fruit in the database
+  await Fruit.findByIdAndUpdate(req.params.fruitId, req.body);
 
+  // Redirect to the fruit's show page to see the updates
+  res.redirect(`/fruits/${req.params.fruitId}`);
+});
 
 app.listen(3000, () => {
   console.log('Listening on port 3000');
